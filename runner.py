@@ -1,6 +1,12 @@
 from functions import calculate, is_valid_operator
-from AppSettings import decimal_places
-from logs.logger import log_operation, log_history, show_history
+from Shared.AppSettings import decimal_places
+from Shared.logs.logger import log_operation, log_history, show_history
+from classes.class_calc import Calculator
+from BLL.calculator import Calculator
+from BLL.validator import is_valid_operator
+from DAL.memory import store_in_memory, recall_memory, show_history
+from Shared.AppSettings import decimal_places
+
 
 # Пам'ять для збереження результатів
 memory = None
@@ -33,36 +39,45 @@ def recall_memory():
 def ask_to_continue():
     return input("Бажаєте виконати ще одне обчислення? (так/ні): ").lower() == 'так'
 
-# Основна функція
+def is_valid_operator(operator):
+    return operator in ['+', '-', '*', '/', '^', '%', '√']
+
 def calculator():
-    print(f"Результати будуть відображатися з {decimal_places} десятковими знаками.")
+    print(f"Результати відображатимуться з  {decimal_places} з десятковими знаками.")
     while True:
         num1, operator, num2 = get_input()
 
-        if not is_valid_operator(operator):
-            print("Неправильний оператор. Спробуйте ще раз.")
-            continue
+        match is_valid_operator(operator):
+            case False:
+                print("Недійсний оператор. Спробуйте ще раз. Ви можете використовувати тільки +, -, *, /, ^, %, √ ")
+                continue
+            case True:
+                try:
+                    result = calculate(num1, operator, num2)
+                    result = round(result, decimal_places)
+                    print(f"Результат: {result}")
+                    store_in_memory(result)
 
-        try:
-            result = calculate(num1, operator, num2)
-            result = round(result, decimal_places)
-            print(f"Результат: {result}")
-            store_in_memory(result)
+                    expression = f"{num1} {operator} {num2 if operator != '√' else ''}"
+                    log_operation(f"{expression} = {result}")
+                    log_history(expression, result)
 
-            # Логування операції в файл історії
-            expression = f"{num1} {operator} {num2 if num2 is not None else ''}"
-            log_operation(f"{expression} = {result}")
-            log_history(expression, result)  # Додати в історію
+                except (ZeroDivisionError, ValueError) as e:
+                    print(e)
 
-        except (ZeroDivisionError, ValueError) as e:
-            print(e)
+        match input("Бажаєте переглянути історію розрахунків? (так/ні): ").lower():
+            case 'так':
+                show_history()
+            case _:
+                pass
 
-        if input("Хочете переглянути історію обчислень? (так/ні): ").lower() == 'так':
-            show_history()
-
-        if not ask_to_continue():
-            break
+        match ask_to_continue():
+            case False:
+                break
 
 if __name__ == "__main__":
-    calculator()
+    calc = calculator()
+    calc.run()
+
+
 
