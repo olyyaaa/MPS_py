@@ -1,0 +1,6 @@
+[MASTER]
+ignore=tests
+disable=C0114,C0115,C0116
+
+[MESSAGES CONTROL]
+disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
